@@ -1,4 +1,17 @@
+from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+
+import PyPDF2
+import io
 import os
+import random
+from datetime import datetime
+from typing import List, Dict, Optional, AsyncGenerator
+from dotenv import load_dotenv
+from elevenlabs.client import ElevenLabs # type: ignore
+from elevenlabs.play import play
 import re
 import json
 import asyncio
@@ -10,8 +23,173 @@ from fastapi.middleware.cors import CORSMiddleware
 import websockets
 import httpx
 
-load_dotenv()
+from fastapi import WebSocket, WebSocketDisconnect
+import websockets
+import json
+import base64
 
+load_dotenv()
+app = FastAPI()
+
+# ----------------------------
+# CORS (dev: allow all)
+# ----------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # dev only; lock down in prod
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ----------------------------
+# In-memory storage (dev only)
+# ----------------------------
+conversations: Dict[str, Dict] = {}
+
+# ----------------------------
+# Pydantic models
+# ----------------------------
+class ChatMessage(BaseModel):
+    conversation_id: str
+    message: str
+
+class StartChatRequest(BaseModel):
+    conversation_id: str
+
+class TTSRequest(BaseModel):
+    text: str
+    model_id: Optional[str] = "eleven_multilingual_v2"
+
+
+# ----------------------------
+# Helpers
+# ----------------------------
+def generate_question(resume_text: str, conversation_history: List[Dict]) -> str:
+    questions = [
+        "Tell me about your most recent work experience and key accomplishments.",
+        "What programming languages or technologies are you most comfortable with?",
+        "Describe a challenging project you worked on and how you overcame obstacles.",
+        "What interests you most about this type of role?",
+        "How do you stay updated with new technologies in your field?",
+        "Tell me about a time you had to learn something completely new for a project.",
+        "What are your career goals for the next few years?",
+        "Describe your experience working in a team environment.",
+        "What's a project you're particularly proud of?",
+        "How do you approach problem-solving when faced with technical challenges?",
+        "Tell me about your leadership experience.",
+        "What motivates you in your work?",
+        "How do you handle tight deadlines and pressure?",
+        "Describe a time you disagreed with a team member. How did you handle it?",
+        "What's the most innovative solution you've implemented?",
+    ]
+
+    asked_questions = [
+        msg["content"]
+        for msg in conversation_history
+        if msg.get("type") == "ai_question" and "content" in msg
+    ]
+
+    available_questions = [q for q in questions if q not in asked_questions]
+    if not available_questions:
+        return "Thank you for sharing! Do you have any questions about the role or our company?"
+
+    return random.choice(available_questions)
+
+
+def generate_response(user_message: str) -> str:
+    responses = [
+        "That's great! Thanks for sharing that insight.",
+        "Interesting! I can see how that experience would be valuable.",
+        "Thanks for elaborating on that. That's really helpful context.",
+        "I appreciate you walking me through that experience.",
+        "That sounds like valuable experience. Thanks for the details.",
+        "Great example! That shows strong problem-solving skills.",
+        "That's impressive! It's clear you have solid experience in this area.",
+        "Thanks for the detailed response. That gives me good insight into your background.",
+        "Excellent! That demonstrates good technical knowledge.",
+        "I can tell you've put thought into your career development.",
+    ]
+    return random.choice(responses)
+
+
+def get_elevenlabs_config() -> tuple[str, str]:
+    """
+    Read env vars safely and return (api_key, voice_id).
+    Raise a clean HTTP 500 if missing.
+    make sure to load env at begining
+    """
+    api_key = os.getenv("ELEVENLABS_API_KEY")
+    elevenlabs = ElevenLabs(
+        api_key= api_key,
+    )
+    print(f"api_key: {api_key}")
+    voice_id = os.getenv("ELEVENLABS_VOICE_ID")
+    print(f"voice id: {voice_id}")
+    if not api_key or not voice_id:
+        raise HTTPException(
+            status_code=500,
+            detail="Missing ELEVENLABS_API_KEY or ELEVENLABS_VOICE_ID in environment.",
+        )
+    return api_key, voice_id
+
+
+# ----------------------------
+# Routes
+# ----------------------------
+@app.get("/")
+async def root():
+    return {"message": "PDF Upload API is running!"}
+
+
+@app.post("/upload-pdf")
+async def upload_pdf(file: UploadFile = File(...)):
+    """
+    Upload and extract text from PDF.
+    """
+    if not file.filename or not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+
+    try:
+        content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="Empty file uploaded")
+
+        pdf_reader = PyPDF2.PdfReader(io.BytesIO(content))
+
+        extracted_text_parts: List[str] = []
+        for page in pdf_reader.pages:
+            page_text = page.extract_text() or ""  # extract_text() can return None
+            extracted_text_parts.append(page_text)
+
+        extracted_text = "\n".join(extracted_text_parts).strip()
+
+        if not extracted_text:
+            raise HTTPException(
+                status_code=400,
+                detail="Could not extract text from PDF (it may be scanned/image-based).",
+            )
+
+        conversation_id = f"conv_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{random.randint(1000, 9999)}"
+        conversations[conversation_id] = {
+            "resume_text": extracted_text,
+            "messages": [],
+            "created_at": datetime.now().isoformat(),
+        }
+
+        return {
+            "success": True,
+            "message": "PDF processed successfully!",
+            "filename": file.filename,
+            "text_length": len(extracted_text),
+            "text_preview": extracted_text[:500],
+            "conversation_id": conversation_id,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
 # Optional: for voice WebSocket
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
 ELEVENLABS_VOICE_ID = os.environ.get("ELEVENLABS_VOICE_ID", "")
@@ -29,16 +207,102 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ----- Config -----
-# ElevenLabs realtime STT websocket (per docs)
-ELEVEN_STT_WS_URL = "wss://api.elevenlabs.io/v1/speech-to-text/realtime"
-# ElevenLabs TTS streaming REST endpoint (per docs)
-ELEVEN_TTS_STREAM_URL = f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}/stream"
 
-HEADERS = {
-    "xi-api-key": ELEVENLABS_API_KEY,
-}
+@app.post("/start-chat")
+async def start_chat(request: StartChatRequest):
+    if request.conversation_id not in conversations:
+        raise HTTPException(status_code=400, detail="Conversation not found")
 
+    convo = conversations[request.conversation_id]
+    first_question = generate_question(convo["resume_text"], convo["messages"])
+
+    convo["messages"].append(
+        {"type": "ai_question", "content": first_question, "timestamp": datetime.now().isoformat()}
+    )
+
+    return {"success": True, "question": first_question, "conversation_id": request.conversation_id}
+
+
+@app.post("/send-message")
+async def send_message(chat_data: ChatMessage):
+    if chat_data.conversation_id not in conversations:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    convo = conversations[chat_data.conversation_id]
+
+    convo["messages"].append(
+        {"type": "user_response", "content": chat_data.message, "timestamp": datetime.now().isoformat()}
+    )
+
+    ai_response = generate_response(chat_data.message)
+    convo["messages"].append(
+        {"type": "ai_response", "content": ai_response, "timestamp": datetime.now().isoformat()}
+    )
+
+    next_question = generate_question(convo["resume_text"], convo["messages"])
+    if next_question:
+        convo["messages"].append(
+            {"type": "ai_question", "content": next_question, "timestamp": datetime.now().isoformat()}
+        )
+
+    return {
+        "success": True,
+        "ai_response": ai_response,
+        "next_question": next_question,
+        "conversation_id": chat_data.conversation_id,
+    }
+
+
+@app.get("/conversation/{conversation_id}")
+async def get_conversation(conversation_id: str):
+    if conversation_id not in conversations:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    return {"success": True, "conversation": conversations[conversation_id]}
+
+
+@app.post("/api/tts")
+async def tts(req: TTSRequest):
+    """
+    ElevenLabs TTS proxy. Returns audio/mpeg so the browser can play it.
+    """
+    text = (req.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="text is required")
+
+    api_key, voice_id = get_elevenlabs_config()
+    tts_url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream"
+
+    headers = {
+        "xi-api-key": api_key,
+        "Accept": "audio/mpeg",
+        "Content-Type": "application/json",
+    }
+    payload = {"text": text, "model_id": req.model_id}
+
+    async def audio_stream() -> AsyncGenerator[bytes, None]:
+        timeout = httpx.Timeout(connect=10.0, read=60.0, write=10.0, pool=10.0)
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            async with client.stream("POST", tts_url, headers=headers, json=payload) as r:
+                if r.status_code != 200:
+                    err = await r.aread()
+                    raise HTTPException(
+                        status_code=502,
+                        detail=f"ElevenLabs TTS error {r.status_code}: {err[:300].decode(errors='ignore')}",
+                    )
+                async for chunk in r.aiter_bytes():
+                    if chunk:
+                        yield chunk
+
+    return StreamingResponse(audio_stream(), media_type="audio/mpeg")
+
+from fastapi import WebSocket, WebSocketDisconnect
+import asyncio
+import json
+import base64
+import websockets
+
+@app.websocket("/ws/stt")
+async def ws_stt(ws: WebSocket):
 
 # ----- Gemini: resume analysis and interview -----
 def _strip_json(raw: str) -> str:
@@ -180,111 +444,86 @@ async def ws_voice(ws: WebSocket):
         await ws.close()
         return
 
-    # Connect to ElevenLabs realtime STT
-    # You may need to pass query params depending on your audio format.
-    # We'll use 16kHz mono PCM16 from browser via AudioWorklet (recommended).
-    try:
-        async with websockets.connect(
-            ELEVEN_STT_WS_URL,
-            extra_headers=HEADERS,
-            ping_interval=20,
-            ping_timeout=20,
-        ) as stt_ws:
+    api_key, _ = get_elevenlabs_config()
 
-            # Send an initial config message if required by ElevenLabs STT
-            # Some providers require this; if ElevenLabs expects it, add it here.
-            # We'll keep it minimal and adapt once you see the first error payload.
-            await stt_ws.send(json.dumps({
-                "type": "start",
-                "audio_format": {
-                    "type": "pcm_s16le",
-                    "sample_rate": 16000,
-                    "channels": 1
-                }
-            }))
+    eleven_url = (
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime"
+        "?model_id=scribe_v2_realtime"
+        "&audio_format=pcm_16000"
+        "&commit_strategy=vad"
+        "&language_code=en"
+        "&include_timestamps=false"
+    )
+
+    # websockets expects dict OR list[tuple], varies by version
+    header_dict = {"xi-api-key": api_key}
+    header_list = [("xi-api-key", api_key)]
+
+    try:
+        # ---- Connect to ElevenLabs with version-compatible headers ----
+        try:
+            # websockets >= 12 often uses additional_headers
+            el_ws = await websockets.connect(eleven_url, additional_headers=header_dict)
+        except TypeError:
+            try:
+                # some versions use extra_headers
+                el_ws = await websockets.connect(eleven_url, extra_headers=header_list)
+            except TypeError:
+                # older versions may accept "headers"
+                el_ws = await websockets.connect(eleven_url, headers=header_list)
+
+        async with el_ws:
 
             async def forward_audio():
-                """Client -> Eleven STT"""
                 while True:
-                    msg = await ws.receive_text()
-                    data = json.loads(msg)
+                    data = await ws.receive_bytes()
+                    b64 = base64.b64encode(data).decode("ascii")
+                    print("got bytes:", len(data))
+                    msg = {
+                        "message_type": "input_audio_chunk",
+                        "audio_base_64": b64,
+                        "sample_rate": 16000,
+                    }
+                    await el_ws.send(json.dumps(msg))
 
-                    if data["type"] == "audio":
-                        # audio is base64 PCM16 chunk
-                        await stt_ws.send(json.dumps({
-                            "type": "audio",
-                            "audio": data["audio"]
-                        }))
-                    elif data["type"] == "stop":
-                        await stt_ws.send(json.dumps({"type": "stop"}))
-                        break
+            async def forward_transcripts():
+                async for message in el_ws:
+                    try:
+                        payload = json.loads(message)
+                    except Exception:
+                        continue
 
-            async def read_transcripts_and_respond():
-                """Eleven STT -> client transcript; and trigger TTS on final transcript."""
-                buffer_text = ""
-                while True:
-                    raw = await stt_ws.recv()
-                    event = json.loads(raw)
+                    mt = payload.get("message_type")
+                    if mt in (
+                        "partial_transcript",
+                        "committed_transcript",
+                        "committed_transcript_with_timestamps",
+                        "session_started",
+                    ):
+                        await ws.send_json(payload)
+                    elif mt and "error" in mt or "error" in payload:
+                        await ws.send_json(payload)
 
-                    # You will inspect actual event schema once you run it.
-                    # We'll handle common shapes: partial + final.
-                    if event.get("type") in ("partial_transcript", "transcript"):
-                        text = event.get("text", "")
-                        is_final = event.get("is_final", False)
-
-                        # Stream transcript to frontend
-                        await ws.send_text(json.dumps({
-                            "type": "transcript",
-                            "text": text,
-                            "is_final": is_final
-                        }))
-
-                        if is_final and text.strip():
-                            # For hackathon MVP: simple echo response
-                            reply = f"Got it. You said: {text.strip()}"
-                            await ws.send_text(json.dumps({"type": "llm_text", "text": reply}))
-
-                            # Stream TTS audio back
-                            async for chunk_b64 in stream_tts_b64(reply):
-                                await ws.send_text(json.dumps({
-                                    "type": "tts_audio",
-                                    "audio": chunk_b64
-                                }))
-
-                            await ws.send_text(json.dumps({"type": "tts_done"}))
-
-                    elif event.get("type") == "end":
-                        break
-
-            async def stream_tts_b64(text: str):
-                """Calls ElevenLabs TTS streaming endpoint and yields base64 audio chunks."""
-                if not ELEVENLABS_VOICE_ID:
-                    # If no voice id, just skip
-                    return
-
-                payload = {
-                    "text": text,
-                    # model_id optional; you can set a low-latency model if your account supports it
-                    # "model_id": "eleven_flash_v2",
-                    "voice_settings": {"stability": 0.4, "similarity_boost": 0.8}
-                }
-
-                async with httpx.AsyncClient(timeout=None) as client:
-                    with client.stream("POST", ELEVEN_TTS_STREAM_URL, headers=HEADERS, json=payload) as r:
-                        r.raise_for_status()
-                        async for chunk in r.aiter_bytes():
-                            if not chunk:
-                                continue
-                            yield base64.b64encode(chunk).decode("utf-8")
-
-            await asyncio.gather(forward_audio(), read_transcripts_and_respond())
+            await asyncio.gather(forward_audio(), forward_transcripts())
 
     except WebSocketDisconnect:
         return
     except Exception as e:
-        # send error to frontend for debugging
+        # send back full error so you see it in browser console
         try:
-            await ws.send_text(json.dumps({"type": "error", "message": str(e)}))
-        except:
+            await ws.send_json({"message_type": "server_error", "detail": repr(e)})
+        except Exception:
             pass
-        return
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "message": "Service is running"}
+
+
+if __name__ == "__main__":
+     import uvicorn
+     result = get_elevenlabs_config()
+     print(result)
+     print("Starting PDF Upload API server...")
+     uvicorn.run(app, host="0.0.0.0", port=8000)
