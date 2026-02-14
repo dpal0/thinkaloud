@@ -1,42 +1,177 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
+/* App.css */
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+body {
+    margin: 0;
+    font-family: Inter, system-ui, Arial, sans-serif;
+    background: #0f172a;
+    color: white;
   }
-  to {
-    transform: rotate(360deg);
+  
+  .app {
+    display: flex;
+    flex-direction: column;
   }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+  
+  .header {
+    background: #020617;
+    padding: 18px;
+    border-bottom: 1px solid #1e293b;
+    text-align: center;
   }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-}
+  
+  .header h1 {
+    margin: 0;
+    color: #60a5fa;
+  }
+  
+  .header p {
+    margin-top: 4px;
+    color: #cbd5f5;
+  }
+  
+  .main {
+    display: grid;
+    grid-template-columns: 20% 1fr;
+    flex: 1;
+  }
+  
+  .sidebar {
+    background: #020617;
+    padding: 16px;
+    border-right: 1px solid #1e293b;
+  }
+  
+  .sidebar h2 {
+    color: #93c5fd;
+    margin-bottom: 12px;
+  }
+  
+  .expert-btn {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: #111827;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    text-align: left;
+  }
+  
+  .expert-btn.active {
+    background: #1d4ed8;
+  }
+  
+  .chat {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+  }
+  
+  .chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 10px;
+  }
+  
+  .session-buttons button {
+    margin-left: 8px;
+    padding: 6px 12px;
+    background: #1d4ed8;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+  }
+  
+  .chat-window {
+    flex: 1;
+    margin: 15px 0;
+    background: #020617;
+    border-radius: 12px;
+    padding: 15px;
+    overflow-y: auto;
+  }
+  
+  .controls {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    min-height: 80px;
+  }
+  
+  .toggle-card,
+  .limit-card,
+  .file-card {
+    background: #020617;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 140px;
+  }
+  
+  .limit-card input,
+  .file-card input {
+    padding: 4px;
+    border-radius: 6px;
+    border: none;
+  }
+  
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+  }
+  
+  .switch input { display: none; }
+  
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #1e293b;
+    border-radius: 22px;
+  }
+  
+  .slider:before {
+    position: absolute;
+    content: '';
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: .3s;
+  }
+  
+  .switch input:checked + .slider {
+    background: #3b82f6;
+  }
+  
+  .switch input:checked + .slider:before {
+    transform: translateX(18px);
+  }
+  
+  .summary textarea {
+    width: 100%;
+    height: 80px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    padding: 10px;
+    border: none;
+    background: #020617;
+    color: white;
+  }
+  
+  .file-name {
+    font-size: 12px;
+    color: #93c5fd;
+  }
+  
