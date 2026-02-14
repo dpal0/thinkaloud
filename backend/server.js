@@ -117,8 +117,8 @@ Respond with ONLY valid JSON (no markdown, no extra text) in this exact shape:
   try {
     return JSON.parse(jsonStr)
   } catch (parseErr) {
-    console.error('Gemini returned non-JSON. Raw:', raw.slice(0, 500))
-    throw new Error('Gemini returned invalid JSON. Try again or use a different resume.')
+  // debug logging removed
+  throw new Error('Gemini returned invalid JSON. Try again or use a different resume.')
   }
 }
 
@@ -175,7 +175,7 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
     }
     res.json(analysis)
   } catch (err) {
-    console.error('Gemini error:', err)
+  // debug logging removed
     res.status(500).json({
       error: err.message || 'Analysis failed',
       details: err.message || String(err),
@@ -201,15 +201,11 @@ app.post('/api/interview/next', async (req, res) => {
     )
     res.json(out)
   } catch (err) {
-    console.error('Interview next error:', err)
+  // debug logging removed
     res.status(500).json({ error: 'Failed to get next question', details: err.message })
   }
 })
 
 app.listen(PORT, () => {
-  console.log(`Backend running at http://localhost:${PORT}`)
-  console.log(`Using Gemini model: ${GEMINI_MODEL}`)
-  console.log(`API key configured: ${GEMINI_API_KEY ? 'Yes' : 'No'}`)
-  console.log(`\nTest your setup at: http://localhost:${PORT}/api/test-gemini`)
-  console.log(`GEMINI_API_KEY: ${GEMINI_API_KEY}`)
+  // debug logs removed for cleaner output
 })
