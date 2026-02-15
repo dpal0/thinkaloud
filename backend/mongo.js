@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { MongoClient } from 'mongodb'
+import { ObjectId } from 'mongodb'
 
 const uri = process.env.MONGO_URI
 const client = new MongoClient(uri)
@@ -32,3 +33,19 @@ export async function getSessionById(id) {
   const db = await connectDB()
   return db.collection('sessions').findOne({ _id: new ObjectId(id) })
 }
+
+export async function getAnalytics() {
+    const db = await connectDB()
+    const sessions = await db.collection('sessions').find().toArray()
+  
+    if (sessions.length === 0) return { count: 0, avgScore: null, minScore: null, maxScore: null, allTexts: [] }
+  
+    const scores = sessions.map(s => s.score).filter(s => typeof s === 'number')
+    const allTexts = sessions.flatMap(s => [s.feedback || '', s.resume_summary || '', ...(s.messages?.map(m => m.content) || [])])
+  
+    const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length
+    const minScore = Math.min(...scores)
+    const maxScore = Math.max(...scores)
+  
+    return { count: sessions.length, avgScore, minScore, maxScore, allTexts }
+  }

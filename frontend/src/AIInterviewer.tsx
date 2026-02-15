@@ -30,6 +30,8 @@ export default function AIInterviewer() {
 
   const [savedSessions, setSavedSessions] = useState<any[]>([])
 const [selectedSessionId, setSelectedSessionId] = useState('')
+const [analytics, setAnalytics] = useState<any>(null)
+const [loadingAnalytics, setLoadingAnalytics] = useState(false)
 
   // ── STT (Speech-to-Text) state ──
   const [isRecording, setIsRecording] = useState(false)
@@ -340,6 +342,35 @@ const [selectedSessionId, setSelectedSessionId] = useState('')
   useEffect(() => {
     loadSessions()
   }, [])
+
+  async function fetchAnalytics() {
+    setLoadingAnalytics(true)
+    try {
+      const res = await fetch('/api/analytics')
+      const data = await res.json()
+      setAnalytics(data)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoadingAnalytics(false)
+    }
+  }
+
+  useEffect(() => {
+    async function fetchAnalytics() {
+      try {
+        const res = await fetch('/api/analytics')
+        const data = await res.json()
+        setAnalytics(data)
+      } catch (err) {
+        console.error('Failed to fetch analytics', err)
+      }
+    }
+  
+    if (savedSessions.length > 0) {
+      fetchAnalytics()
+    }
+  }, [savedSessions])
   
   return (
     <section className="chat">
@@ -431,29 +462,6 @@ const [selectedSessionId, setSelectedSessionId] = useState('')
           )}
           {analysisError && <p className="analysis-error">{analysisError}</p>}
         </div>
-
-        <div className="file-card resume-card">
-        <label>Reload Previous Session Summary</label>
-        <select
-            value={selectedSessionId}
-            onChange={(e) => setSelectedSessionId(e.target.value)}
-        >
-            <option value="">Select a session…</option>
-            {savedSessions.map((s) => (
-            <option key={s._id} value={s._id}>
-                {s.jobTitle} – {new Date(s.createdAt).toLocaleDateString()}
-            </option>
-            ))}
-        </select>
-
-        <button
-            className="resume-btn"
-            onClick={handleResumeSession}
-        >
-            Reload Summary
-        </button>
-        </div>
-                <br></br>
         <div className="controls">
           <button
             type="button"
@@ -514,6 +522,28 @@ const [selectedSessionId, setSelectedSessionId] = useState('')
             />
           </div>
         </div>
+        <div className="file-card resume-card">
+        <label>Reload Previous Session Summary</label>
+        <select
+            value={selectedSessionId}
+            onChange={(e) => setSelectedSessionId(e.target.value)}
+        >
+            <option value="">Select a session…</option>
+            {savedSessions.map((s) => (
+            <option key={s._id} value={s._id}>
+                {s.jobTitle} – {new Date(s.createdAt).toLocaleDateString()}
+            </option>
+            ))}
+        </select>
+
+        <button
+            className="resume-btn"
+            onClick={handleResumeSession}
+        >
+            Reload Summary
+        </button>
+        </div>
+                <br></br>
 
         <div className="summary">
           <h3>Session Summary</h3>
@@ -532,6 +562,39 @@ const [selectedSessionId, setSelectedSessionId] = useState('')
             onChange={(e) => setFeedback(e.target.value)}
           />
         </div>
+
+        <div className="analytics-section">
+  <h3>Analytics</h3>
+
+  {analytics ? (
+    <div className="analytics-output">
+      <div className="analytics-stats">
+        <p>Total sessions: <strong>{analytics.count}</strong></p>
+        <p>Average score: <strong>{analytics.avgScore?.toFixed(1)}</strong></p>
+        <p>Min score: <strong>{analytics.minScore}</strong></p>
+        <p>Max score: <strong>{analytics.maxScore}</strong></p>
+      </div>
+
+      {analytics.aiAnalysis && !analytics.aiAnalysis.error && (
+        <div className="ai-insights">
+          <h4>AI Insights from Gemini</h4>
+          <p><strong>Fit score:</strong> {analytics.aiAnalysis.fitScore}/100</p>
+          <p><strong>Reason:</strong> {analytics.aiAnalysis.fitReason}</p>
+          <p><strong>First interview question suggested:</strong> {analytics.aiAnalysis.firstQuestion}</p>
+          <p><strong>Resume summary:</strong> {analytics.aiAnalysis.resumeSummary}</p>
+        </div>
+      )}
+
+      {analytics.aiAnalysis?.error && (
+        <p className="analysis-error">{analytics.aiAnalysis.error}</p>
+      )}
+    </div>
+  ) : (
+    <p className="placeholder">Analytics will appear here once sessions exist.</p>
+  )}
+</div>
+
+
       </div>
     </section>
   )

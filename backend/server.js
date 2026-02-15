@@ -10,6 +10,7 @@ import { pipeline } from 'stream'
 import { promisify } from 'util'
 
 import { saveSession, getSessions } from './mongo.js'
+import { getAnalytics } from './mongo.js'
 
 const streamPipeline = promisify(pipeline)
 
@@ -500,6 +501,50 @@ app.post('/api/session/save', async (req, res) => {
     }
   })
   
+  app.get('/api/analytics', async (req, res) => {
+    try {
+      const analytics = await getAnalytics()
+  
+      // Optional: do AI analysis on all texts using Gemini
+      if (analytics.allTexts.length > 0 && GEMINI_API_KEY) {
+        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
+        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL })
+        const prompt = `
+        Analyze the following candidate session texts (summaries, messages, feedback).
+        Respond **ONLY in strict JSON** with the keys:
+
+        {
+        "themes": ["short list of themes you detect across sessions"],
+        "sentimentSummary": "short summary of overall sentiment, positive/neutral/negative"
+        }
+
+        Do NOT include any explanations, markdown, or extra text.
+        Texts to analyze:
+        ${analytics.allTexts.join('\n\n')}
+        `
+        const result = await model.generateContent(prompt)
+        const aiText = result.response?.text?.() || ''
+        let aiAnalysis = {}
+        try {
+        const cleaned = aiText
+            .replace(/^```json\s*/i, '')
+            .replace(/^```/i, '')
+            .trim()
+        aiAnalysis = JSON.parse(cleaned)
+        } catch (err) {
+        console.error('Failed to parse AI output:', aiText, err)
+        aiAnalysis = { error: 'Failed to parse AI analysis' }
+        }
+  
+        res.json({ ...analytics, aiAnalysis })
+      } else {
+        res.json(analytics)
+      }
+    } catch (err) {
+      console.error('Analytics error', err)
+      res.status(500).json({ error: err.message })
+    }
+  })
 
 server.listen(PORT, () => {
   // Server started
