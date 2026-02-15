@@ -3,6 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import multer from 'multer'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import http from 'node:http'
 
 import { pipeline } from 'stream'
 import { promisify } from 'util'
@@ -17,9 +18,49 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 // Try these in order: gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash-exp
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
 
+// CodeQuestionBot Flask backend URL
+const CQBOT_BACKEND = process.env.CQBOT_BACKEND_URL || 'http://localhost:8000'
+
 const upload = multer({ storage: multer.memoryStorage() })
 
 app.use(cors())
+
+// ─── Reverse proxy: /cqbot/* → CodeQuestionBot Flask backend ───
+// MUST be before express.json() so the raw request body can be piped through
+app.all('/cqbot/*', (req, res) => {
+  // Strip /cqbot prefix to get the target path
+  const targetPath = req.originalUrl.replace(/^\/cqbot/, '') || '/'
+  const target = new URL(CQBOT_BACKEND)
+
+  const options = {
+    hostname: target.hostname,
+    port: target.port,
+    path: targetPath,
+    method: req.method,
+    headers: {
+      ...req.headers,
+      host: target.host,
+    },
+  }
+
+  const proxyReq = http.request(options, (proxyRes) => {
+    res.writeHead(proxyRes.statusCode, proxyRes.headers)
+    proxyRes.pipe(res)
+  })
+
+  proxyReq.on('error', () => {
+    if (!res.headersSent) {
+      res.status(502).json({
+        error: 'CodeQuestionBot backend is not reachable.',
+        hint: 'Start it with: cd codequestionbot/backend && source venv/bin/activate && python app/main.py',
+      })
+    }
+  })
+
+  // Pipe the request body to the proxy request
+  req.pipe(proxyReq)
+})
+
 app.use(express.json())
 
 app.get('/api/health', (req, res) => {
