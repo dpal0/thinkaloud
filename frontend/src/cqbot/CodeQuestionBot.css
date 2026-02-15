@@ -1,0 +1,469 @@
+/* ====================================================
+   CodeQuestionBot — themed to match ThinkAloud (dark)
+   ==================================================== */
+
+.cqbot {
+  width: 100%;
+  max-width: 1100px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ---- Auth panel (sign-in / loading) ---- */
+
+.cqbot-auth {
+  text-align: center;
+  background: #020617;
+  border: 1px solid #1e293b;
+  border-radius: 14px;
+  padding: 48px 32px;
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+}
+
+.cqbot-auth h2 {
+  margin: 0;
+  color: #93c5fd;
+}
+
+.cqbot-auth p {
+  color: #94a3b8;
+  margin: 0;
+  max-width: 440px;
+}
+
+.cqbot-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #60a5fa;
+  margin: 0;
+}
+
+.cqbot-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 24px;
+  background: #1d4ed8;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cqbot-link-btn:hover {
+  background: #2563eb;
+}
+
+/* ---- Header ---- */
+
+.cqbot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 12px;
+}
+
+.cqbot-header h2 {
+  margin: 0;
+  color: #93c5fd;
+}
+
+.cqbot-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cqbot-header-right span {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.cqbot-ghost-btn {
+  padding: 7px 14px;
+  background: transparent;
+  border: 1px solid #1e293b;
+  border-radius: 7px;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.2s;
+}
+
+.cqbot-ghost-btn:hover {
+  border-color: #3b82f6;
+  color: white;
+}
+
+/* ---- Hero ---- */
+
+.cqbot-hero {
+  text-align: center;
+}
+
+.cqbot-hero h1 {
+  margin: 8px 0 4px;
+  font-size: 1.8rem;
+  color: white;
+}
+
+.cqbot-hero p {
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* ---- Repo form ---- */
+
+.cqbot-panel {
+  background: #020617;
+  border: 1px solid #1e293b;
+  border-radius: 14px;
+  padding: 28px;
+}
+
+.cqbot-repo-form {
+  display: grid;
+  gap: 14px;
+}
+
+.cqbot-repo-form label {
+  font-weight: 600;
+  color: #93c5fd;
+  font-size: 14px;
+}
+
+.cqbot-repo-form input[type="url"] {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #1e293b;
+  background: #0f172a;
+  color: white;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.cqbot-repo-form input[type="url"]:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.4);
+  border-color: #3b82f6;
+}
+
+.cqbot-primary-btn {
+  padding: 10px 22px;
+  background: #1d4ed8;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cqbot-primary-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.cqbot-primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cqbot-error {
+  color: #f87171;
+  margin: 0;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* ---- Questions state ---- */
+
+.cqbot-questions-state {
+  display: grid;
+  gap: 20px;
+}
+
+.cqbot-questions-header {
+  display: grid;
+  gap: 12px;
+}
+
+.cqbot-questions-header h2 {
+  margin: 0;
+  color: white;
+  font-size: 1.3rem;
+}
+
+.cqbot-questions-header .cqbot-subhead {
+  color: #94a3b8;
+  margin: 0;
+  font-size: 14px;
+}
+
+.cqbot-mono {
+  font-family: "Courier New", Courier, monospace;
+  color: #93c5fd;
+  font-size: 0.9rem;
+}
+
+.cqbot-warning {
+  color: #fbbf24;
+  margin: 0;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* ---- Question cards ---- */
+
+.cqbot-question-list {
+  display: grid;
+  gap: 18px;
+}
+
+.cqbot-question-card {
+  background: #0f172a;
+  border-radius: 14px;
+  padding: 20px;
+  border: 1px solid #1e293b;
+  display: grid;
+  gap: 12px;
+}
+
+.cqbot-question-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: white;
+}
+
+.cqbot-question-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.cqbot-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #1e293b;
+  border-radius: 999px;
+  padding: 4px 12px;
+  border: 1px solid #334155;
+  font-weight: 600;
+  font-size: 13px;
+  color: #60a5fa;
+  width: fit-content;
+}
+
+.cqbot-snippet {
+  background: #020617;
+  color: #e2e8f0;
+  padding: 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  overflow-x: auto;
+  border: 1px solid #1e293b;
+  font-family: "Courier New", Courier, monospace;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.cqbot-question-card label {
+  font-weight: 600;
+  color: #93c5fd;
+  font-size: 13px;
+}
+
+.cqbot-question-card textarea {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #1e293b;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  background: #020617;
+  color: white;
+  min-height: 90px;
+}
+
+.cqbot-question-card textarea:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.35);
+  border-color: #3b82f6;
+}
+
+.cqbot-textarea-error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+/* ---- Actions row ---- */
+
+.cqbot-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ---- Submitted / grades ---- */
+
+.cqbot-submitted {
+  display: grid;
+  gap: 20px;
+}
+
+.cqbot-submitted h2 {
+  margin: 0;
+  color: white;
+  font-size: 1.4rem;
+}
+
+.cqbot-subhead {
+  color: #94a3b8;
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Score summary ring */
+
+.cqbot-score-summary {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 14px;
+  padding: 24px 28px;
+}
+
+.cqbot-score-ring {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 5px solid #334155;
+  flex-shrink: 0;
+}
+
+.cqbot-score-pct {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.cqbot-score-details {
+  display: grid;
+  gap: 4px;
+}
+
+.cqbot-score-level {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+/* level colors */
+.cqbot-level-excellent {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.08);
+  color: #4ade80;
+}
+
+.cqbot-level-good {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.08);
+  color: #60a5fa;
+}
+
+.cqbot-level-fair {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+  color: #fbbf24;
+}
+
+.cqbot-level-low {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+  color: #f87171;
+}
+
+/* score badges */
+.cqbot-score-badge {
+  font-size: 12px;
+}
+
+.cqbot-score-high {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border-color: #22c55e;
+}
+
+.cqbot-score-mid {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: #f59e0b;
+}
+
+.cqbot-score-low {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border-color: #ef4444;
+}
+
+.cqbot-grade-feedback {
+  background: #020617;
+  border-radius: 10px;
+  padding: 12px 16px;
+  border: 1px solid #1e293b;
+  display: grid;
+  gap: 4px;
+}
+
+.cqbot-grade-feedback p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 14px;
+}
+
+/* ---- Instructor panel ---- */
+
+.cqbot-instructor-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.cqbot-instructor-panel h2 {
+  margin: 0;
+  color: white;
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 720px) {
+  .cqbot-panel {
+    padding: 20px;
+  }
+
+  .cqbot-question-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cqbot-score-summary {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
