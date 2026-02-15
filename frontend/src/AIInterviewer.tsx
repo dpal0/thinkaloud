@@ -31,7 +31,7 @@ export default function AIInterviewer() {
   const [savedSessions, setSavedSessions] = useState<any[]>([])
 const [selectedSessionId, setSelectedSessionId] = useState('')
 const [analytics, setAnalytics] = useState<any>(null)
-const [, setLoadingAnalytics] = useState(false)
+// const [, setLoadingAnalytics] = useState(false)
 
   // ── STT (Speech-to-Text) state ──
   const [isRecording, setIsRecording] = useState(false)
@@ -343,18 +343,18 @@ const [, setLoadingAnalytics] = useState(false)
     loadSessions()
   }, [])
 
-  async function fetchAnalytics() {
-    setLoadingAnalytics(true)
-    try {
-      const res = await fetch('/api/analytics')
-      const data = await res.json()
-      setAnalytics(data)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoadingAnalytics(false)
-    }
-  }
+  // async function fetchAnalytics() {
+  //   setLoadingAnalytics(true)
+  //   try {
+  //     const res = await fetch('/api/analytics')
+  //     const data = await res.json()
+  //     setAnalytics(data)
+  //   } catch (err) {
+  //     console.error(err)
+  //   } finally {
+  //     setLoadingAnalytics(false)
+  //   }
+  // }
 
   useEffect(() => {
     async function fetchAnalytics() {
