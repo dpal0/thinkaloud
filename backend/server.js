@@ -22,10 +22,8 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 // Try these in order: gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash-exp
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
 
-// CodeQuestionBot Flask backend URL
+/*// CodeQuestionBot Flask backend URL
 const CQBOT_BACKEND = process.env.CQBOT_BACKEND_URL || 'http://localhost:8000'
-
-const upload = multer({ storage: multer.memoryStorage() })
 
 app.use(cors())
 
@@ -64,6 +62,8 @@ app.all('/cqbot/*', (req, res) => {
   // Pipe the request body to the proxy request
   req.pipe(proxyReq)
 })
+*/
+const upload = multer({ storage: multer.memoryStorage() })
 
 app.use(express.json())
 
@@ -497,6 +497,7 @@ app.post('/api/session/save', async (req, res) => {
       }))
       res.json(sessionsWithStringId)
     } catch (err) {
+      console.error('GET /api/session/list error:', err)
       res.status(500).json({ error: err.message })
     }
   })
@@ -552,5 +553,5 @@ app.post('/api/session/save', async (req, res) => {
   })
 
 server.listen(PORT, () => {
-  // Server started
+  console.log(`Server running on port ${PORT}`)
 })

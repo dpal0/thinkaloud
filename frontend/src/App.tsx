@@ -2,11 +2,11 @@
 import { useState } from 'react'
 import './App.css'
 import AIInterviewer from './AIInterviewer'
-import CodeQuestionBot from './cqbot/CodeQuestionBot'
+// import CodeQuestionBot from './cqbot/CodeQuestionBot'
 
 const experts = [
     { id: 1, name: 'AI Interviewer' },
-    { id: 2, name: 'Code Question Bot' },
+    // { id: 2, name: 'Code Question Bot' },
 ]
 
 function App() {
@@ -35,7 +35,7 @@ function App() {
 
         <section className="chat">
             {selectedExpert.name === 'AI Interviewer' && <AIInterviewer />}
-            {selectedExpert.name === 'Code Question Bot' && <CodeQuestionBot />}
+           // {/* selectedExpert.name === 'Code Question Bot' && <CodeQuestionBot /> */}
         </section>
       </div>
     </div>

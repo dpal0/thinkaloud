@@ -2,14 +2,14 @@ import 'dotenv/config'
 import { MongoClient } from 'mongodb'
 import { ObjectId } from 'mongodb'
 
-const uri = process.env.MONGO_URI
-const client = new MongoClient(uri)
-
 let db
+let client
 
 export async function connectDB() {
   if (!db) {
+    const uri = process.env.MONGO_URI
     if (!uri) throw new Error('MONGO_URI not defined')
+    client = new MongoClient(uri)
     await client.connect()
     db = client.db('aiinterviewer')
     console.log('MongoDB connected')
